@@ -1,0 +1,160 @@
+package assign04;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Provides methods to check for anagrams and find the largest group of anagrams
+ * in a list of words or in a text file.
+ *
+ * @author Tyler Gagliardi & Alex Waldmann
+ */
+public class AnagramChecker {
+
+    public static void main(String[] args) {
+        System.out.println(sort("aFIl"));
+        System.out.println(sort("FIal"));
+        System.out.println(areAnagrams("listen", "silent")); // true
+        System.out.println(areAnagrams("hello", "world"));   // false
+        String[] words = {"listen", "silent", "enlist", "inlets", "google", "gooogle"};
+        System.out.println(Arrays.toString(getLargestAnagramGroup(words))); // [listen, silent, enlist, inlets]
+    }
+
+    /**
+     * Returns a new string with the letters of the input string arranged in
+     * alphabetical order.
+     *
+     * @param s the string to sort
+     * @return the sorted string
+     */
+    public static String sort(String s) {
+        //Convert string to Character array for sorting
+        //Map to Character[]
+        Character[] chars = s.chars().mapToObj((c) -> (char) c).toArray(Character[]::new);
+
+        //Sort
+        insertionSort(chars, Comparator.naturalOrder());
+
+        //Convert back to String
+        return Arrays.stream(chars).map(String::valueOf).collect(Collectors.joining());
+    }
+
+    /**
+     * Sorts the given array in place using insertion sort and the provided
+     * comparator.
+     *
+     * @param arr the array to sort
+     * @param cmp the comparator to decide order
+     * @param <T> the type of elements in the array
+     */
+    public static <T> void insertionSort(T[] arr, Comparator<? super T> cmp) {
+        for (int i = 1; i < arr.length; i++) {
+            T key = arr[i];
+            int j = i - 1;
+            while (j >= 0 && cmp.compare(arr[j], key) > 0) {
+                arr[j + 1] = arr[j];
+                j--;
+            }
+            arr[j + 1] = key;
+        }
+    }
+
+    /**
+     * Checks whether two strings are anagrams of each other.
+     *
+     * @param str1 the first string
+     * @param str2 the second string
+     * @return true if the strings are anagrams, false otherwise
+     */
+    public static boolean areAnagrams(String str1, String str2) {
+        if (str1.length() != str2.length()) {
+            return false;
+        }
+        // Compare case-insensitively by normalizing to lowercase before sorting
+        return sort(str1.toLowerCase()).equals(sort(str2.toLowerCase()));
+    }
+
+    /**
+     * Finds the largest group of words that are anagrams from a list of words.
+     *
+     * @param words list of words to check
+     * @return the largest anagram group as a string array, or [] if none found
+     */
+    private static String[] findLargestAnagramGroup(List<String> words) {
+        Map<String, List<String>> anagramGroups = new HashMap<>();
+
+        for (String str : words) {
+            // Group anagrams case-insensitively by normalizing to lowercase
+            String sorted = sort(str.toLowerCase());
+            anagramGroups.computeIfAbsent(sorted, k -> new ArrayList<>()).add(str);
+        }
+
+        List<String> largestGroup = null;
+        for (List<String> group : anagramGroups.values()) {
+            if (largestGroup == null || group.size() > largestGroup.size()) {
+                largestGroup = group;
+            }
+        }
+
+        return (largestGroup != null && largestGroup.size() > 1) ? largestGroup.toArray(String[]::new) : new String[0];
+    }
+
+    /**
+     * Finds the largest anagram group in an array of words.
+     *
+     * @param inputArr array of words
+     * @return the largest anagram group in a string array, or [] if none found
+     */
+    public static String[] getLargestAnagramGroup(String[] inputArr) {
+        List<String> words = List.of(inputArr);
+
+        //Two helper methods, findLargestAnagramGroup used between both 
+        //getLargestAnagramGroup methods to avoid code duplication, 
+        //this findLargestAnagramGroup method uses the sort helper method
+        //Idk if this counts but I sure hope so
+        return findLargestAnagramGroup(words);
+    }
+
+    /**
+     * Reads a file and returns the largest group of anagrams found in the file.
+     * Words in the file should be separated by commas and spaces.
+     *
+     * @param filepath the path to the input file
+     * @return the largest anagram group in a string array, or [] if none found
+     * or an error occurs
+     */
+    public static String[] getLargestAnagramGroup(String filepath) {
+        List<String> words = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filepath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                String[] wordsOnLine = line.split(", ");
+
+                for (String word : wordsOnLine) {
+                    if (word.isEmpty()) {
+                        continue;
+                    }
+                    words.add(word);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + e.getMessage());
+            return new String[0]; // Provide log and return empty array if 
+            //file cannot be read
+        }
+        return findLargestAnagramGroup(words);
+    }
+}
