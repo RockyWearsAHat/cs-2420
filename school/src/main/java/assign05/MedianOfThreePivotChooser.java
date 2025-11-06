@@ -75,7 +75,6 @@ class PivotItemWithIndex<E> {
      * The element value
      */
     E item;
-
     /**
      * The index of this element in the original list
      */
