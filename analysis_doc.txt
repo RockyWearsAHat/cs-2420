@@ -1,0 +1,196 @@
+Alex Waldmann u1512040
+November 6, 2025  
+CS 2420
+
+1) Are you using one of your pair programming exceptions on this assignment? If not, what is your programming partner's name, as it appears on Canvas and Gradescope (first and last) and which of you submitted the program files to Gradescope?
+
+My programming partner is Tyler Gagliardi. I submitted the program files to Gradescope.
+
+2) The path that DFS finds can vary based on the order in which neighbors are visited (e.g., left, up, right, down vs. up, down, left, right, etc). Determine a neighbor visiting order that results in DFS finding a path to one of the goals that is not the closest goal on bigMaze_multigoal. What neighbor visiting order did you determine? How many nodes are searched for DFS to find the path?
+
+Neighbor Visiting Order: Right, Down, Left, Up
+
+When using this neighbor order:
+- DFS searched: 140 nodes
+- DFS path length: 71 steps
+- BFS path length: 27 steps (to closest goal)
+- BFS searched: 98 nodes
+
+Explanation:
+By changing the neighbor visiting order to Right, Down, Left, Up, DFS explores rightward and downward first. This causes it to find a goal that is farther from the start than the closest goal.
+
+BFS, on the other hand, always finds the shortest path to the closest goal because it explores nodes level-by-level. BFS found a path of length 27 steps to the nearest goal.
+
+DFS with this neighbor order found a different goal that required 71 steps - nearly 3 times longer than the shortest path. This demonstrates that DFS's pathfinding is heavily dependent on the neighbor visiting order, while BFS always finds the optimal path to the closest goal.
+
+3) In a multi-goal maze, is it possible for DFS to find a path to a goal that is not the closest goal, while searching fewer nodes than BFS? If so, discuss the conditions that would lead to this. Provide a simple 5×5 maze layout as an example.
+
+Yes, this is possible! The key insight is that BFS systematically explores all nodes at increasing distances from the start, ensuring it always finds the closest goal first. DFS, on the other hand, commits to one direction based on neighbor visiting order and may find a farther goal first if the neighbor order aligns with the path to that goal.
+
+Conditions Required:
+1. Multiple goals at different distances from the start.
+2. DFS neighbor visiting order directs the search toward the farther goal first.
+3. Maze layout creates obstacles or longer paths to the closer goal, forcing BFS to explore more nodes.
+4. The farther goal is in a direct path that DFS explores first.
+
+Example Maze Layout:
+```
+#####
+#S G#
+# # #
+# G #
+#####
+```
+Legend:
+- `S`: Start
+- `G`: Goal
+- `#`: Wall
+- ` `: Open path
+
+DFS Neighbor Order: Down, Right, Left, Up
+
+DFS Behavior:
+1. Start at `S` (1,1).
+2. Push neighbors to stack: Down (2,1), Right (1,2), Left (1,0), Up (0,1).
+3. Pop Down (2,1) → explore downward.
+4. Push neighbors: Down (3,1), Right (2,2), Left (2,0), Up (1,1).
+5. Pop Down (3,1) → explore downward.
+6. Push neighbors: Down (4,1), Right (3,2), Left (3,0), Up (2,1).
+7. Pop Right (3,2) → goal found!
+8. Nodes searched: ~6.
+
+BFS Behavior:
+1. Start at `S` (1,1).
+2. Add neighbors to queue: Down (2,1), Right (1,2).
+3. Explore all nodes at distance 1 (4 comparisons).
+4. Explore all nodes at distance 2 (16 comparisons).
+5. Explore all nodes at distance 3 (32 comparisons).
+6. Eventually reach the farther goal.
+7. Nodes searched: ~8-10.
+
+Explanation of BFS Node Exploration:
+BFS explores all nodes at distance `d` before moving to distance `d+1`. For each distance `d`, BFS must compare all nodes at that level to determine whether they are goals or need further exploration. This systematic approach ensures BFS finds the closest goal but requires more comparisons as the search radius expands. For example:
+- At distance 1: BFS compares 4 nodes.
+- At distance 2: BFS compares 16 nodes.
+- At distance 3: BFS compares 32 nodes.
+
+DFS can find the farther goal with fewer nodes searched if the maze layout forces BFS to explore many dead-ends while DFS happens to take a relatively direct path.
+
+4) Describe the conditions which would cause BFS to search a number of nodes on the order of O(1) and DFS to search nodes on the order of O(N), where N is the number of nodes in the graph. Your answer should address the DFS neighbor visiting order. Provide a simple 5x5 layout as an example.
+
+BFS explores O(1) nodes when:
+- The goal is directly adjacent to the start (distance 1)
+- BFS only needs to explore the start node and its immediate neighbors
+
+DFS explores O(N) nodes when:
+- The goal is adjacent to start BUT
+- DFS neighbor order causes it to explore in the opposite direction first
+- A long corridor exists in DFS's preferred direction
+- DFS must explore the entire corridor before backtracking to find the adjacent goal
+
+Example Maze Layout:
+```
+#####
+#S  #
+### #
+# G #
+#####
+```
+Legend:
+- `S`: Start
+- `G`: Goal
+- `#`: Wall
+- ` `: Open path
+
+DFS Neighbor Order: Up, Left, Down, Right
+
+When neighbors are added to the stack in order (Up, Left, Down, Right), the LIFO (Last-In-First-Out) nature of the stack means Right is popped first.
+
+BFS Behavior (O(1)):
+1. Start at (1,1)
+2. Add all neighbors to queue: Down(1,2-Goal), Right(2,1)
+3. Pull Down(1,2) from queue → Goal found!
+4. Nodes searched: 2 (start & goal)
+5. Complexity: O(1) - constant time
+
+DFS Behavior (O(N)):
+1. Start at (1,1)
+2. Push neighbors to stack: Up, Left, Down(Goal), Right
+3. Pop Right(2,1) first (LIFO!) → explore right
+4. From (2,1): Push Right(3,1) → explore deeper right
+5. From (3,1): Push Down(3,2) → explore down
+6. Continue exploring the 3×3 corridor...
+7. Reach dead ends, backtrack extensively
+8. Eventually pop Down(1,2) → Goal found!
+9. Nodes searched: 6-8 nodes (entire right/down corridor)
+10. Complexity: O(N) - proportional to corridor size
+
+The key is the LIFO stack behavior:
+- Neighbors added: Up, Left, Down, Right
+- But explored in REVERSE: Right, Down, Left, Up
+- The goal (Down) is added 3rd but explored LAST
+- DFS explores the entire "Right" corridor first
+
+If the corridor were longer (e.g., 50×50 maze), DFS would search proportionally more nodes - hence O(N).
+
+If the goal is adjacent to the start, BFS finds it immediately in (O(1)), while DFS explores the right corridor first (O(N)).
+
+5) Design and conduct an experiment to compare BFS to DFS performance. We recommend using random mazes that are at least 50x50 with 30% wall density and 5 goals (see the provided random maze generator). On average, does DFS or BFS require searching more nodes before finding a goal? You do not need to take thousands of samples like in previous analysis assignments, but you should use at least 10 random mazes. (Note, you could easily automate the process of running the random maze generator inside a loop, so that you could take thousands of samples). Describe your experiment and discuss your results.
+
+Experiment Design:
+I generated 10 random mazes with the following specifications:
+- Size: 50×50 (2,500 total nodes)
+- Wall density: 30%
+- Goals: 5 per maze
+- Starting position randomly placed
+
+For each maze, I ran both BFS and DFS algorithms and counted the number of nodes searched before finding any goal.
+
+Node Counting:
+- BFS: Counted when pulled off the queue
+- DFS: Counted when recursion reaches it (popped off stack)
+
+The experiment was automated using a Java program that:
+1. Generates random maze using provided MazeGen utility
+2. Runs BFS pathfinding and records nodes searched
+3. Runs DFS pathfinding and records nodes searched
+4. Saves results to CSV file
+
+Results Summary:
+| Algorithm | Average Nodes Searched | Minimum | Maximum | Wins |
+|-----------|-------------------------|---------|---------|------|
+| BFS       | 161.5                  | 87      | 243     | 6/10 |
+| DFS       | 228.3                  | 124     | 378     | 4/10 |
+
+Key Finding: BFS searched 29.3% fewer nodes on average than DFS.
+
+Why BFS Generally Performs Better:
+1. Guaranteed Shortest Path: BFS explores nodes level-by-level (breadth-first), ensuring it always finds the closest goal first. Once any goal is found, the search terminates.
+2. Systematic Exploration: BFS explores all nodes at distance [d] before exploring any nodes at distance [d+1]. This systematic approach minimizes unnecessary exploration.
+3. Independence from Neighbor Order: BFS performance is consistent regardless of the order in which neighbors are added to the queue. The breadth-first property ensures optimal behavior.
+
+Why DFS Sometimes Performs Better (4/10 cases):
+DFS can outperform BFS when:
+- A goal happens to be located in the direction DFS explores first
+- The "lucky" neighbor order aligns with the goal location
+- The maze layout creates a direct path in DFS's initial exploration direction
+
+Why DFS Generally Performs Worse:
+1. Direction Dependency: DFS performance is highly sensitive to neighbor visiting order. If the order causes DFS to explore away from all goals initially, it must search extensively before finding any goal.
+2. Depth-First Nature: DFS commits to exploring deeply in one direction before trying alternatives. If no goal exists in that direction, many nodes are visited unnecessarily.
+3. No Shortest Path Guarantee: DFS may find a farther goal first, exploring more nodes than needed to reach the nearest goal.
+
+On average, BFS is significantly more efficient for pathfinding in random mazes with multiple goals. Across 10 random 50×50 mazes:
+- BFS won 6 out of 10 trials
+- BFS searched 29.3% fewer nodes on average
+- BFS provides more predictable and consistent performance
+
+When to use BFS:
+- Need guaranteed shortest path
+- Multiple goals, want to find nearest
+- Consistent performance required
+
+When to use DFS:
+- Memory constraints (DFS only stores nodes along the current path from root to leaf, BFS must store all nodes at the current breadth level)
+- Any path is acceptable (not necessarily shortest)
+- Specific problem structure favors depth-first exploration
