@@ -1,7 +1,0 @@
-ProblemSize,BadHashCollisions,MediumHashCollisions,GoodHashCollisions
-100,99,35,35
-500,499,399,399
-1000,999,899,899
-2500,2499,2096,2096
-5000,4999,4194,4193
-10000,9999,8387,8388
