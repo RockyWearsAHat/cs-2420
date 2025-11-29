@@ -11,8 +11,12 @@ import java.util.Map;
 
 /**
  * This class generates random phrases based on a context-free grammar provided
- * in a file. The generator uses an optimized iterative approach with primitive
- * arrays for maximum performance.
+ * in a file. The generator uses a hybrid approach:
+ * <ul>
+ * <li>For small grammars: precomputes all possible phrases for O(1)
+ * generation</li>
+ * <li>For large grammars: uses optimized stack-based generation</li>
+ * </ul>
  *
  * <p>
  * The grammar is stored as a 3D primitive int array where:
@@ -31,6 +35,9 @@ import java.util.Map;
  */
 public class RandomPhraseGenerator {
 
+    // Maximum number of precomputed phrases before falling back to stack-based
+    private static final int MAX_PRECOMPUTED_PHRASES = 100000;
+
     // Maps non-terminal names to unique integer IDs (0, 1, 2...)
     private static Map<String, Integer> nonTerminalMap;
 
@@ -40,6 +47,9 @@ public class RandomPhraseGenerator {
 
     // Optimized terminal storage - store as byte[][] for direct output
     private static byte[][] terminalBytes;
+
+    // Precomputed phrases (if grammar is small enough)
+    private static byte[][] precomputedPhrases;
 
     // Stores the grammar: grammar[nonTerminalID][productionIndex][symbolIndex]
     private static int[][][] grammar;
@@ -81,7 +91,123 @@ public class RandomPhraseGenerator {
 
         int startId = nonTerminalMap.get("<start>");
 
-        // Stack for generation
+        // Try to precompute all phrases (much faster for small grammars)
+        ArrayList<String> allPhrases = tryPrecompute(startId);
+
+        if (allPhrases != null) {
+            // Use precomputed phrases - O(1) per phrase!
+            generateFromPrecomputed(allPhrases, numPhrases);
+        } else {
+            // Fall back to stack-based generation
+            generateStackBased(startId, numPhrases);
+        }
+    }
+
+    /**
+     * Tries to precompute all possible phrases. Returns null if grammar is too
+     * large.
+     */
+    private static ArrayList<String> tryPrecompute(int startId) {
+        try {
+            ArrayList<String> phrases = expand(startId, 0);
+            if (phrases.size() <= MAX_PRECOMPUTED_PHRASES) {
+                return phrases;
+            }
+        } catch (RuntimeException e) {
+            // Grammar too large, fall through
+        }
+        return null;
+    }
+
+    /**
+     * Recursively expands a symbol into all possible strings. Throws if result
+     * would be too large.
+     */
+    private static ArrayList<String> expand(int symbolId, int depth) {
+        if (depth > 50) {
+            throw new RuntimeException("Grammar too deep");
+        }
+
+        ArrayList<String> results = new ArrayList<>();
+
+        if (symbolId < 0) {
+            results.add(terminals.get(~symbolId));
+            return results;
+        }
+
+        int[][] productions = grammar[symbolId];
+        for (int[] production : productions) {
+            ArrayList<String> current = new ArrayList<>();
+            current.add("");
+
+            for (int symbol : production) {
+                ArrayList<String> expansions = expand(symbol, depth + 1);
+                ArrayList<String> newCurrent = new ArrayList<>();
+                for (String prefix : current) {
+                    for (String suffix : expansions) {
+                        newCurrent.add(prefix + suffix);
+                        if (newCurrent.size() > MAX_PRECOMPUTED_PHRASES) {
+                            throw new RuntimeException("Too many phrases");
+                        }
+                    }
+                }
+                current = newCurrent;
+            }
+            results.addAll(current);
+            if (results.size() > MAX_PRECOMPUTED_PHRASES) {
+                throw new RuntimeException("Too many phrases");
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Generates phrases from precomputed list - extremely fast.
+     */
+    private static void generateFromPrecomputed(ArrayList<String> phrases, int numPhrases) {
+        // Convert to byte arrays with newlines
+        int phraseCount = phrases.size();
+        precomputedPhrases = new byte[phraseCount][];
+        for (int i = 0; i < phraseCount; i++) {
+            precomputedPhrases[i] = (phrases.get(i) + "\n").getBytes(StandardCharsets.UTF_8);
+        }
+
+        byte[] outputBuffer = new byte[1048576];
+        int outputPos = 0;
+        final OutputStream out = System.out;
+        long rs = randState;
+
+        try {
+            for (int p = 0; p < numPhrases; p++) {
+                rs ^= (rs << 21);
+                rs ^= (rs >>> 35);
+                rs ^= (rs << 4);
+                int idx = (int) (((rs >>> 33) * phraseCount) >>> 31);
+
+                byte[] phrase = precomputedPhrases[idx];
+                int len = phrase.length;
+
+                if (outputPos + len > 1048576) {
+                    out.write(outputBuffer, 0, outputPos);
+                    outputPos = 0;
+                }
+                System.arraycopy(phrase, 0, outputBuffer, outputPos, len);
+                outputPos += len;
+            }
+
+            if (outputPos > 0) {
+                out.write(outputBuffer, 0, outputPos);
+            }
+            randState = rs;
+        } catch (IOException e) {
+            System.err.println("Error writing output: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Stack-based generation for large grammars.
+     */
+    private static void generateStackBased(int startId, int numPhrases) {
         int[] stack = new int[256];
 
         // Large output buffer (1MB bytes)
@@ -92,6 +218,9 @@ public class RandomPhraseGenerator {
         final int[][][] g = grammar;
         final byte[][] tb = terminalBytes;
         final OutputStream out = System.out;
+
+        // Inline random state as local
+        long rs = randState;
 
         try {
             for (int p = 0; p < numPhrases; p++) {
@@ -116,7 +245,14 @@ public class RandomPhraseGenerator {
                     } else {
                         // Non-terminal - push production symbols in reverse order
                         int[][] productions = g[symbol];
-                        int[] production = productions[nextInt(productions.length)];
+
+                        // Inline XorShift random
+                        rs ^= (rs << 21);
+                        rs ^= (rs >>> 35);
+                        rs ^= (rs << 4);
+                        int idx = (int) (((rs >>> 33) * productions.length) >>> 31);
+
+                        int[] production = productions[idx];
 
                         // Unroll for common production lengths
                         switch (production.length) {
@@ -143,6 +279,9 @@ public class RandomPhraseGenerator {
                 outputBuffer[outputPos++] = '\n';
             }
 
+            // Save random state back
+            randState = rs;
+
             // Flush remaining
             if (outputPos > 0) {
                 out.write(outputBuffer, 0, outputPos);
@@ -150,18 +289,6 @@ public class RandomPhraseGenerator {
         } catch (IOException e) {
             System.err.println("Error writing output: " + e.getMessage());
         }
-    }
-
-    /**
-     * Fast XorShift random - returns value in [0, bound)
-     */
-    private static int nextInt(int bound) {
-        long x = randState;
-        x ^= (x << 21);
-        x ^= (x >>> 35);
-        x ^= (x << 4);
-        randState = x;
-        return (int) (((x >>> 33) * bound) >>> 31);
     }
 
     /**
