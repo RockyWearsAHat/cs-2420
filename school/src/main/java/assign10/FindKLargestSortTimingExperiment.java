@@ -10,9 +10,11 @@ import timing.TimingExperiment;
 public class FindKLargestSortTimingExperiment extends TimingExperiment {
 
     private List<Integer> list;
+    private int k;
 
     public FindKLargestSortTimingExperiment(int count, int kMin, double factor, int iterCount) {
         super("k", makeProblemSizes(count, kMin, factor), iterCount);
+        k = kMin;
     }
 
     private static List<Integer> makeProblemSizes(int count, int min, double factor) {
@@ -30,6 +32,7 @@ public class FindKLargestSortTimingExperiment extends TimingExperiment {
         list = IntStream.rangeClosed(1, n)
                 .boxed().collect(Collectors.toList());
         java.util.Collections.shuffle(list);
+        k = n;
     }
 
     @Override
@@ -38,13 +41,13 @@ public class FindKLargestSortTimingExperiment extends TimingExperiment {
         //larger list will not affect time significantly for heap as no matter
         //the size of the list, we are only extracting 10 elements not the entire list
         //list O(1) time (or should be))
-        FindKLargest.findKLargestSort(list, 10);
+        FindKLargest.findKLargestSort(list, k);
     }
 
     public static void main(String[] args) {
         FindKLargestSortTimingExperiment exp
-                = new FindKLargestSortTimingExperiment(20, 10_000, 2.0, 5);
-        exp.warmup(10);
+                = new FindKLargestSortTimingExperiment(15, 1_000, 2.0, 10);
+        exp.warmup(1000);
         exp.run();
         exp.print();
     }

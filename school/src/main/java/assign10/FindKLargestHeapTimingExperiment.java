@@ -10,9 +10,11 @@ import timing.TimingExperiment;
 public class FindKLargestHeapTimingExperiment extends TimingExperiment {
 
     private List<Integer> list;
+    private int k;
 
     public FindKLargestHeapTimingExperiment(int count, int kMin, double factor, int iterCount) {
         super("k", makeProblemSizes(count, kMin, factor), iterCount);
+        k = kMin;
     }
 
     private static List<Integer> makeProblemSizes(int count, int min, double factor) {
@@ -30,6 +32,7 @@ public class FindKLargestHeapTimingExperiment extends TimingExperiment {
         list = IntStream.rangeClosed(1, n)
                 .boxed().collect(Collectors.toList());
         java.util.Collections.shuffle(list);
+        k = n;
     }
 
     @Override
@@ -43,8 +46,8 @@ public class FindKLargestHeapTimingExperiment extends TimingExperiment {
 
     public static void main(String[] args) {
         FindKLargestHeapTimingExperiment exp
-                = new FindKLargestHeapTimingExperiment(20, 10_000, 2.0, 10);
-        exp.warmup(10);
+                = new FindKLargestHeapTimingExperiment(15, 1_000, 2.0, 10);
+        exp.warmup(1000);
         exp.run();
         exp.print();
     }

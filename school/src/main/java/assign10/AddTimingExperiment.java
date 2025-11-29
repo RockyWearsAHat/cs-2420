@@ -3,8 +3,6 @@ package assign10;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import timing.TimingExperiment;
 
@@ -12,6 +10,7 @@ public class AddTimingExperiment extends TimingExperiment {
 
     private BinaryMaxHeap<Integer> heap;
     private Random rand;
+    private int n;
 
     public AddTimingExperiment(int count, int nMin, double factor, int iterCount) {
         super("N", makeProblemSizes(count, nMin, factor), iterCount);
@@ -31,23 +30,28 @@ public class AddTimingExperiment extends TimingExperiment {
 
     @Override
     protected void setupExperiment(int n) {
-        List<Integer> list = IntStream.rangeClosed(1, n)
-                .boxed().collect(Collectors.toList());
+        // List<Integer> list = IntStream.rangeClosed(1, n)
+        //         .boxed().collect(Collectors.toList());
 
-        heap = new BinaryMaxHeap<>(list);
+        // heap = new BinaryMaxHeap<>(list);
+        // rand = new Random();
+        this.n = n;
+        heap = new BinaryMaxHeap<>();
         rand = new Random();
     }
 
     @Override
     protected void runComputation() {
-        heap.add(rand.nextInt());
+        for (int i = 0; i < n; i++) {
+            heap.add(rand.nextInt());
+        }
     }
 
     public static void main(String[] args) {
         AddTimingExperiment exp
-                = new AddTimingExperiment(10, 10_000, 2.0, 5);
+                = new AddTimingExperiment(15, 10_000, 2.0, 10);
 
-        exp.warmup(10);
+        exp.warmup(1000);
         exp.run();
         exp.print();
     }
