@@ -2,7 +2,7 @@ package comprehensive;
 
 /**
  * This class runs a comprehensive performance benchmark of the
- * RandomPhraseGenerator. It generates a large number of phrases (1 million by
+ * RandomPhraseGenerator. It generates a large number of phrases (10 million by
  * default) and measures the average execution time across multiple runs to
  * ensure consistent results.
  *
@@ -28,12 +28,12 @@ public class FinalComparisonExperiment {
      * @param args optional:
      * <ul>
      * <li>args[0] - alternate grammar</li>
-     * <li>args[1] - number of phrases to generate (default 1,000,000)</li>
+     * <li>args[1] - number of phrases to generate (default 10,000,000)</li>
      * </ul>
      *
      */
     public static void main(String[] args) {
-        String grammarFile = args.length > 0 ? args[0] : "src/main/java/comprehensive/poetic_sentence.g";
+        String grammarFile = args.length > 0 ? args[0] : "school/src/main/java/comprehensive/poetic_sentence.g";
         int numPhrases = args.length > 1 ? Integer.parseInt(args[1]) : 10000000; // 10 million
 
         //Warmup - redirect both stdout and the generator's output
