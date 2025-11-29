@@ -92,7 +92,7 @@ public class RandomPhraseGenerator {
         final int[][][] g = grammar;
         final byte[][] tb = terminalBytes;
         final OutputStream out = System.out;
-        
+
         try {
             for (int p = 0; p < numPhrases; p++) {
                 // Generate phrase directly into output buffer
