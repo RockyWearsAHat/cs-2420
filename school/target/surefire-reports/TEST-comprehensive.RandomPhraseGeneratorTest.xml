@@ -12,7 +12,7 @@
     <property name="user.country" value="US"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="sun.boot.library.path" value="/opt/homebrew/Cellar/openjdk@21/21.0.8/libexec/openjdk.jdk/Contents/Home/lib"/>
-    <property name="sun.java.command" value="/Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire/surefirebooter-20251128222236248_3.jar /Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire 2025-11-28T22-22-36_206-jvmRun1 surefire-20251128222236248_1tmp surefire_0-20251128222236248_2tmp"/>
+    <property name="sun.java.command" value="/Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire/surefirebooter-20251128234538925_3.jar /Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire 2025-11-28T23-45-38_884-jvmRun1 surefire-20251128234538925_1tmp surefire_0-20251128234538925_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="test" value="comprehensive.RandomPhraseGeneratorTest"/>
@@ -30,7 +30,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire/surefirebooter-20251128222236248_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/alexwaldmann/Desktop/School/Fall 2025/CS 2420/school/target/surefire/surefirebooter-20251128234538925_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8"/>
@@ -60,13 +60,13 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testPoeticGrammarContainsValidVerbs" classname="comprehensive.RandomPhraseGeneratorTest" time="0.008"/>
+  <testcase name="testPoeticGrammarContainsValidVerbs" classname="comprehensive.RandomPhraseGeneratorTest" time="0.009"/>
   <testcase name="testPoeticGrammarProducesOutput" classname="comprehensive.RandomPhraseGeneratorTest" time="0.001"/>
-  <testcase name="testLargeBatchProducesCorrectCount" classname="comprehensive.RandomPhraseGeneratorTest" time="0.002"/>
-  <testcase name="testDeterministicWithSameSeed" classname="comprehensive.RandomPhraseGeneratorTest" time="0.002"/>
-  <testcase name="testPoeticGrammarContainsValidObjects" classname="comprehensive.RandomPhraseGeneratorTest" time="0.002"/>
-  <testcase name="testRepeatedCallsWork" classname="comprehensive.RandomPhraseGeneratorTest" time="0.002"/>
+  <testcase name="testLargeBatchProducesCorrectCount" classname="comprehensive.RandomPhraseGeneratorTest" time="0.001"/>
+  <testcase name="testDeterministicWithSameSeed" classname="comprehensive.RandomPhraseGeneratorTest" time="0.003"/>
+  <testcase name="testPoeticGrammarContainsValidObjects" classname="comprehensive.RandomPhraseGeneratorTest" time="0.001"/>
+  <testcase name="testRepeatedCallsWork" classname="comprehensive.RandomPhraseGeneratorTest" time="0.003"/>
   <testcase name="testSuperSimpleGrammarProducesOutput" classname="comprehensive.RandomPhraseGeneratorTest" time="0.0"/>
-  <testcase name="testPoeticGrammarStructure" classname="comprehensive.RandomPhraseGeneratorTest" time="0.001"/>
-  <testcase name="testZeroPhrases" classname="comprehensive.RandomPhraseGeneratorTest" time="0.001"/>
+  <testcase name="testPoeticGrammarStructure" classname="comprehensive.RandomPhraseGeneratorTest" time="0.0"/>
+  <testcase name="testZeroPhrases" classname="comprehensive.RandomPhraseGeneratorTest" time="0.0"/>
 </testsuite>
