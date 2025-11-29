@@ -1,14 +1,13 @@
 package comprehensive;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.SplittableRandom;
 
 /**
  * This class generates random phrases based on a context-free grammar provided
@@ -39,8 +38,8 @@ public class RandomPhraseGenerator {
     private static ArrayList<String> terminals;
     private static Map<String, Integer> terminalMap;
 
-    // Optimized terminal storage - store as char[][] for fast copying
-    private static char[][] terminalChars;
+    // Optimized terminal storage - store as byte[][] for direct output
+    private static byte[][] terminalBytes;
 
     // Stores the grammar: grammar[nonTerminalID][productionIndex][symbolIndex]
     private static int[][][] grammar;
@@ -51,8 +50,8 @@ public class RandomPhraseGenerator {
     // Reusable buffer for parsing productions
     private static final int[] productionBuffer = new int[100];
 
-    // SplittableRandom is faster than ThreadLocalRandom for single-threaded use
-    private static final SplittableRandom rand = new SplittableRandom();
+    // XorShift random state
+    private static long randState = System.nanoTime() ^ 0x5DEECE66DL;
 
     /**
      * Main entry point for the RandomPhraseGenerator.
@@ -66,6 +65,7 @@ public class RandomPhraseGenerator {
         terminals = new ArrayList<>();
         terminalMap = new HashMap<>();
         tempGrammar = new ArrayList<>();
+        randState = System.nanoTime() ^ 0x5DEECE66DL;
 
         String grammarFile = args[0];
         int numPhrases = Integer.parseInt(args[1]);
@@ -84,16 +84,16 @@ public class RandomPhraseGenerator {
         // Stack for generation
         int[] stack = new int[256];
 
-        // Large output buffer for batched writing (512KB)
-        char[] outputBuffer = new char[524288];
+        // Large output buffer (1MB bytes)
+        byte[] outputBuffer = new byte[1048576];
         int outputPos = 0;
 
         // Cache static fields as locals for speed
         final int[][][] g = grammar;
-        final char[][] tc = terminalChars;
-        final SplittableRandom r = rand;
-
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out), 524288)) {
+        final byte[][] tb = terminalBytes;
+        final OutputStream out = System.out;
+        
+        try {
             for (int p = 0; p < numPhrases; p++) {
                 // Generate phrase directly into output buffer
                 int top = 0;
@@ -103,20 +103,20 @@ public class RandomPhraseGenerator {
                     int symbol = stack[--top];
 
                     if (symbol < 0) {
-                        // Terminal - copy chars directly to output buffer
-                        char[] chars = tc[~symbol];
-                        int len = chars.length;
+                        // Terminal - copy bytes directly to output buffer
+                        byte[] bytes = tb[~symbol];
+                        int len = bytes.length;
                         // Check if we need to flush
-                        if (outputPos + len + 1 > 524288) {
+                        if (outputPos + len + 1 > 1048576) {
                             out.write(outputBuffer, 0, outputPos);
                             outputPos = 0;
                         }
-                        System.arraycopy(chars, 0, outputBuffer, outputPos, len);
+                        System.arraycopy(bytes, 0, outputBuffer, outputPos, len);
                         outputPos += len;
                     } else {
                         // Non-terminal - push production symbols in reverse order
                         int[][] productions = g[symbol];
-                        int[] production = productions[r.nextInt(productions.length)];
+                        int[] production = productions[nextInt(productions.length)];
 
                         // Unroll for common production lengths
                         switch (production.length) {
@@ -147,10 +147,21 @@ public class RandomPhraseGenerator {
             if (outputPos > 0) {
                 out.write(outputBuffer, 0, outputPos);
             }
-
         } catch (IOException e) {
             System.err.println("Error writing output: " + e.getMessage());
         }
+    }
+
+    /**
+     * Fast XorShift random - returns value in [0, bound)
+     */
+    private static int nextInt(int bound) {
+        long x = randState;
+        x ^= (x << 21);
+        x ^= (x >>> 35);
+        x ^= (x << 4);
+        randState = x;
+        return (int) (((x >>> 33) * bound) >>> 31);
     }
 
     /**
@@ -198,11 +209,11 @@ public class RandomPhraseGenerator {
             }
         }
 
-        // Convert terminals to char[][] for fast copying
+        // Convert terminals to byte[][] for direct output (UTF-8)
         int numTerminals = terminals.size();
-        terminalChars = new char[numTerminals][];
+        terminalBytes = new byte[numTerminals][];
         for (int i = 0; i < numTerminals; i++) {
-            terminalChars[i] = terminals.get(i).toCharArray();
+            terminalBytes[i] = terminals.get(i).getBytes(StandardCharsets.UTF_8);
         }
     }
 

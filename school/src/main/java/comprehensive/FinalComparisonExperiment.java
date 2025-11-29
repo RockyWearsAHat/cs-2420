@@ -27,8 +27,8 @@ public class FinalComparisonExperiment {
      *
      */
     public static void main(String[] args) {
-        String grammarFile = args.length > 0 ? args[0] : "./school/src/main/java/comprehensive/poetic_sentence.g";
-        int numPhrases = args.length > 1 ? Integer.parseInt(args[1]) : 10000000; // 1 billion ran in ~96,000 ms (~1.6 minutes)
+        String grammarFile = args.length > 0 ? args[0] : "src/main/java/comprehensive/poetic_sentence.g";
+        int numPhrases = args.length > 1 ? Integer.parseInt(args[1]) : 10000000; // 10 million
 
         //Warmup
         System.out.println("Warming up...");
