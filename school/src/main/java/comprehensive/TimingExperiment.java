@@ -14,7 +14,7 @@ import java.io.IOException;
  *
  * @author Alex Waldmann
  * @author Tyler Gagliardi
- * @version December 3, 2025
+ * @version December 4, 2025
  */
 public class TimingExperiment {
 
