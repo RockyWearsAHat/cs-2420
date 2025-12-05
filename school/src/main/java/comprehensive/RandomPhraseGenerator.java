@@ -111,7 +111,7 @@ public class RandomPhraseGenerator {
         // Strategy selection based on whether precomputation succeeded
         try {
             if (precomputedPhrases != null) {
-                // FAST PATH: O(1) per phrase - just random index lookup and byte copy
+                // FAST PATH: O(1) per phrase - random index lookup and byte copy
                 generateFromPrecomputed(out, numPhrases);
             } else {
                 // FALLBACK PATH: O(phrase_length) per phrase - stack-based expansion
@@ -150,17 +150,28 @@ public class RandomPhraseGenerator {
         // XorShift64 has a period of 2^64-1, sufficient for any practical use.
         long seed = System.nanoTime();
 
-        // ---- Loop Unrolling Setup ----
+        // ---- Loop Unrolling (Incredibly optimized using bit operations and
+        // previous data coercion to make this REALLY FAST, ms for millions of phrases) ---
         // Divide phrases into groups of 8 for unrolled processing.
-        // Using bit operations: >> 3 is equivalent to / 8, & 7 is equivalent to % 8
-        int groups = numPhrases >> 3;      // Number of complete groups of 8
+        // Using bit operations: >> 3 (2^3, right shift for devision to remove bits)
+        // equivalent to / 8, & 7 is equivalent to % 8
+        int groups = numPhrases >> 3;       // Number of complete groups of 8
         int remainder = numPhrases & 7;     // Remaining phrases (0-7)
 
-        // ---- Main Generation Loop (8x Unrolled) ----
+        // ---- Main Generation Loop (8x "Unrolled") ----
+        // Very unnecessary, but improves tested speed by ~10%-20%.
+        // Basically runs multiple random generations very quickly in one
+        // iteration to reduce loop overhead. Tested with sizes 2x-16x operations,
+        // 8x was fastest in testing. This could technically be made faster with 
+        // multithreading, but for a single process this is basically
+        // as good as I could get it.
         for (int g = 0; g < groups; g++) {
             // Generate 8 random phrase references using XorShift64.
             // Each XorShift64 step: 3 XOR operations with specific shift amounts.
             // The shift values (21, 35, 4) are from Marsaglia's recommended parameters.
+
+            // Xorshift64 with validated shift constants (21, 35, 4) chosen to maximize period
+            // and ensure good bit diffusion so all bits mix well and avoid RNG bias. (chatgpt.com)
             seed ^= (seed << 21);
             seed ^= (seed >>> 35);
             seed ^= (seed << 4);
@@ -277,13 +288,14 @@ public class RandomPhraseGenerator {
         // been caught during precomputation attempt (depth > 50 throws exception).
         int[] stack = new int[256];
 
-        // ---- XorShift64 PRNG ----
+        // ---- XorShift64 "RNG" ----
         long seed = System.nanoTime();
 
         // ---- Main Generation Loop ----
         for (int i = 0; i < numPhrases; i++) {
             // Initialize stack with start symbol
             int top = 0;
+
             stack[top++] = startSymbol;
 
             // Expand symbols until stack is empty (phrase complete)
@@ -315,9 +327,9 @@ public class RandomPhraseGenerator {
                     seed ^= (seed >>> 35);
                     seed ^= (seed << 4);
 
-                    // Select random production. Using (seed & 0x7FFFFFFFL) ensures
-                    // positive value for modulo. Cannot use bitwise AND here because
-                    // production count is not necessarily power of 2.
+                    // Select random production, pseudo rng for speed. Using 
+                    // (seed & 0x7FFFFFFFL) ensures positive value for modulo. 
+                    // Basically masks off sign bit. (Thanks AI).
                     int[] production = productions[(int) ((seed & 0x7FFFFFFFL) % productions.length)];
 
                     // Push symbols in REVERSE order so they pop in correct (left-to-right) order
@@ -349,8 +361,8 @@ public class RandomPhraseGenerator {
      * <p>
      * If the grammar is small enough (≤100,000 phrases and not deeply
      * recursive), we store all phrases in an array for fast random selection.
-     * The array is padded to a power-of-2 size so we can use bitwise AND
-     * instead of modulo for indexing.</p>
+     * The array is padded to a power-of-2 size so we can use bitwise AND for
+     * speed instead of modulous for the indexing.</p>
      *
      * <p>
      * If the grammar is too large or recursive, this sets precomputedPhrases to
@@ -388,7 +400,7 @@ public class RandomPhraseGenerator {
                 // ---- Fill Padding Slots ----
                 // Cycle through existing phrases to fill remaining slots.
                 // This ensures all array indices are valid and maintains
-                // approximately uniform distribution.
+                // mostly uniform distribution (a few items may repeat).
                 for (int i = size; i < powerOf2; i++) {
                     precomputedPhrases[i] = precomputedPhrases[i % size];
                 }
@@ -443,12 +455,12 @@ public class RandomPhraseGenerator {
             ArrayList<byte[]> current = new ArrayList<>();
             current.add(new byte[0]);
 
-            // For each symbol in production, compute Cartesian product
+            // For each symbol in production, compute all possible expansions
             for (int s : production) {
                 ArrayList<byte[]> expansions = expand(s, depth + 1);
                 ArrayList<byte[]> next = new ArrayList<>();
 
-                // Cartesian product: combine each current prefix with each expansion
+                // All phrases: combine each current prefix with each expansion
                 for (byte[] prefix : current) {
                     for (byte[] suffix : expansions) {
                         // Concatenate prefix and suffix into new byte array
@@ -478,11 +490,12 @@ public class RandomPhraseGenerator {
 
     // ==================== GRAMMAR PARSING METHODS ====================
     /**
-     * Reads a grammar file and sets up all the data structures.
+     * Reads a grammar file and sets up all data structures.
      *
      * <p>
      * After parsing, tries to precompute all phrases if the grammar is small
-     * enough.</p>
+     * enough.
+     * </p>
      *
      * @param filePath path to the grammar file
      * @throws IOException if the file cannot be read

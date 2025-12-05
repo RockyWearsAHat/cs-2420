@@ -43,7 +43,8 @@ public class TimingExperiment {
             // Force garbage collection to minimize interference
             System.gc();
 
-            // Redirect output to null during timing
+            // Redirect output to null during timing as we are testing algorithm
+            // scaling, any overhead should be minimized
             java.io.PrintStream originalOut = System.out;
             System.setOut(new java.io.PrintStream(new java.io.OutputStream() {
                 public void write(int b) {
